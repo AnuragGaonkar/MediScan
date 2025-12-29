@@ -60,7 +60,9 @@ function App() {
   };
 
   return (
-    <div className="container">
+    /* 🔑 THIS IS THE CRITICAL FIX */
+    <div className={`container ${preview ? "has-preview" : "no-preview"}`}>
+      
       <header className="header">
         <h1>MediScan</h1>
         <p>Medical Image Disease Classification</p>
@@ -68,7 +70,11 @@ function App() {
 
       <div className="upload-section">
         <label className="file-label">Upload Medical Image</label>
-        <input type="file" accept="image/*" onChange={handleFileChange} />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+        />
       </div>
 
       {preview && (
