@@ -17,7 +17,7 @@ function App() {
     setImage(file);
     setPreview(URL.createObjectURL(file));
     setPrediction("");
-    setCompleted(false); // ✅ Resets on new image
+    setCompleted(false);
   };
 
   const handlePredict = async () => {
@@ -36,8 +36,18 @@ function App() {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text);
+        const errorData = await res.json().catch(() => ({}));
+        
+        // ✅ HANDLE MEDICAL IMAGE VALIDATION ERROR
+        if (errorData.error === "Not a medical image") {
+          setPrediction(`⚠️ ${errorData.message}\n\nPlease upload proper CT/MRI/X-Ray scans for accurate analysis.`);
+          setCompleted(false);
+        } else {
+          setPrediction("Server error. Please try again.");
+          setCompleted(false);
+        }
+        setLoading(false);
+        return;
       }
 
       const data = await res.json();
@@ -46,12 +56,12 @@ function App() {
     } catch (err) {
       console.error("Prediction Error:", err);
       setPrediction("Server error. Please try again.");
+      setCompleted(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ CLINICAL GRADE PREDICTION FORMAT
   const formatPrediction = (data) => {
     let result = `IMAGE ANALYSIS REPORT\n\n`;
     result += `Image Type: ${data.image_type}\n`;

@@ -22,6 +22,30 @@ MODEL_ACCURACIES = {
     "BreastMRI": 93.2
 }
 
+# ✅ MEDICAL IMAGE VALIDATION
+def is_likely_medical_image(image):
+    """Validate if image looks like medical scan (not photo/selfie)"""
+    if image is None:
+        return False
+    
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    mean_intensity = np.mean(gray)
+    contrast = np.std(gray)
+    
+    # Medical scans: high contrast (40-120), mid brightness (60-200)
+    if contrast < 35 or mean_intensity < 50 or mean_intensity > 210:
+        return False
+    
+    # Check for skin-like colors (common in selfies)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    skin_pixels = np.sum((hsv[:,:,0] > 0) & (hsv[:,:,0] < 20) & (hsv[:,:,1] > 30))
+    total_pixels = image.shape[0] * image.shape[1]
+    
+    if skin_pixels / total_pixels > 0.3:  # >30% skin pixels = likely photo
+        return False
+    
+    return True
+
 # --- Utility Functions ---
 def softmax(z):
     exp_z = np.exp(z - np.max(z))
@@ -36,7 +60,7 @@ def load_and_preprocess_image(image, image_size=(64, 64)):
 def feature_scaling(image_data, mean, std):
     return (image_data - mean) / (std + 1e-8)
 
-# ✅ UPDATED: Image Type Prediction with confidence
+# ✅ Image Type Prediction with confidence
 def predict_image_type(img_flattened):
     W = np.loadtxt(path("softmax_weights.csv"), delimiter=",")
     b = np.loadtxt(path("softmax_bias.csv"), delimiter=",")
@@ -46,16 +70,15 @@ def predict_image_type(img_flattened):
     label_mapping = dict(zip(label_mapping_df["Index"], label_mapping_df["Label"]))
 
     img_processed = feature_scaling(img_flattened, X_mean, X_std)
-
     z = np.dot(img_processed, W) + b
     y_pred = softmax(z)
     predicted_class = int(np.argmax(y_pred))
-    confidence = float(np.max(y_pred))  # ✅ REAL CONFIDENCE
+    confidence = float(np.max(y_pred))
     predicted_type = label_mapping.get(predicted_class, "Unknown")
 
     return predicted_type, img_flattened, confidence
 
-# ✅ UPDATED: Disease Prediction with confidence
+# ✅ Disease Prediction with confidence
 def predict_disease(image_type, img_flattened):
     model_configs = {
         "AbdomenCT": {
@@ -120,7 +143,7 @@ def predict_disease(image_type, img_flattened):
     z = np.dot(img_processed.reshape(1, -1), W) + b
     y_pred = softmax(z)
     predicted_class = int(np.argmax(y_pred))
-    confidence = float(np.max(y_pred))  # ✅ REAL CONFIDENCE
+    confidence = float(np.max(y_pred))
     predicted_label = label_mapping.get(predicted_class, "Unknown")
 
     disease_status = "Diseased" if predicted_label != "Normal" else "Healthy"
@@ -133,7 +156,6 @@ def predict_disease(image_type, img_flattened):
 def health():
     return jsonify({"status": "Server is running"})
 
-# ✅ UPDATED: /predict endpoint with confidence scores
 @app.route("/predict", methods=["POST"])
 def upload():
     file = request.files["file"]
@@ -142,9 +164,20 @@ def upload():
     if image is None:
         return jsonify({"error": "Invalid image"}), 400
 
-    img_flattened = load_and_preprocess_image(image)
+    # ✅ CRITICAL: MEDICAL IMAGE VALIDATION
+    if not is_likely_medical_image(image):
+        return jsonify({
+            "error": "Not a medical image",
+            "message": "Please upload CT/MRI/X-Ray scans only. This appears to be a photo/selfie.",
+            "image_type": "Non-medical",
+            "image_type_confidence": 0.0,
+            "status": "Invalid",
+            "disease": "N/A",
+            "disease_confidence": 0.0,
+            "model_accuracy": None
+        }), 400
 
-    # ✅ Get confidence scores
+    img_flattened = load_and_preprocess_image(image)
     predicted_type, img_flattened, type_confidence = predict_image_type(img_flattened)
     disease_status, disease_type, disease_confidence = predict_disease(predicted_type, img_flattened)
 
@@ -159,6 +192,5 @@ def upload():
 
     return jsonify(response)
 
-# --- Run Flask App ---
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
