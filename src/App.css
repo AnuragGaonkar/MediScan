@@ -20,10 +20,16 @@
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden; /* ✅ KILLS HORIZONTAL SCROLL */
 }
 
 body {
-  margin: 0;
   font-family: "Segoe UI", Arial, sans-serif;
   background: var(--primary-light);
   color: var(--text-primary);
@@ -31,45 +37,39 @@ body {
 }
 
 /* ==========================================================================
-   MAIN APP CONTAINER - PERFECTLY CENTERED
-   ========================================================================== */
-/* ==========================================================================
-   MAIN APP CONTAINER - PERFECTLY CENTERED (FIXED)
+   MAIN APP CONTAINER - BULLETPROOF CENTERED & FULL WIDTH
    ========================================================================== */
 .app-container {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  align-items: center; /* ✅ CENTERED */
+  align-items: center;
 }
 
 .app-container.no-preview {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 40px 20px;
-  width: 100%; /* ✅ ADDED */
+  padding: 60px 20px;
 }
 
-.app-container.no-preview > * {
+.app-container.no-preview > *:not(.loading-overlay) {
   width: 100%;
-  max-width: 420px; /* ✅ Perfect centered width */
-  margin: 0 auto; /* ✅ EXTRA CENTERING */
-  display: block; /* ✅ FORCE BLOCK */
+  max-width: 420px;
 }
 
 .app-container.has-preview {
   align-items: stretch;
-  max-width: 1200px;
+  padding: 40px 20px;
 }
 
-
 /* ==========================================================================
-   HEADER - CENTERED
+   HEADER - FULL WIDTH CENTERED
    ========================================================================== */
 .app-header {
   text-align: center;
@@ -109,7 +109,7 @@ body {
   font-size: 16px;
   color: var(--text-primary);
   position: relative;
-  padding: 12px;
+  padding: 20px;
   border: 2px dashed var(--border-color);
   border-radius: 8px;
   text-align: center;
@@ -130,7 +130,7 @@ body {
 }
 
 /* ==========================================================================
-   REPORT SECTION
+   REPORT SECTION - FULL WIDTH
    ========================================================================== */
 .report-section {
   background: var(--card-bg);
@@ -153,6 +153,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
+  width: 100%;
 }
 
 /* ==========================================================================
@@ -184,7 +185,6 @@ body {
   border-bottom: 2px solid #e3ebf3;
 }
 
-/* Image Card */
 .image-container {
   flex: 1;
   display: flex;
@@ -202,7 +202,6 @@ body {
   object-fit: contain;
 }
 
-/* Details Card */
 .details-card {
   gap: 12px;
 }
@@ -224,7 +223,6 @@ body {
   font-weight: 500;
 }
 
-/* Prediction Card */
 .prediction-container {
   flex: 1;
   display: flex;
@@ -247,7 +245,7 @@ body {
 }
 
 /* ==========================================================================
-   PREDICT BUTTON - GREEN EFFECT ONLY
+   PREDICT BUTTON - GREEN EFFECT
    ========================================================================== */
 .predict-button {
   width: 100%;
@@ -278,14 +276,6 @@ body {
   background: #b5c2cf;
   cursor: not-allowed;
   transform: none;
-}
-
-.predict-button.loading {
-  background: var(--success-gradient);
-}
-
-.predict-button.completed {
-  background: var(--success-dark);
 }
 
 .spinner {
@@ -321,42 +311,17 @@ body {
   z-index: 1000;
 }
 
-/* ==========================================================================
-   ANIMATIONS
-   ========================================================================== */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-/* ==========================================================================
-   RESPONSIVE DESIGN
-   ========================================================================== */
+/* RESPONSIVE */
 @media (max-width: 768px) {
   .report-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
   }
-  
   .app-container {
     padding: 16px;
-  }
-  
-  .report-section {
-    padding: 24px 20px;
-  }
-  
-  .upload-section {
-    padding: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .app-header h1 {
-    font-size: 24px;
-  }
-  
-  .predict-button {
-    font-size: 15px;
   }
 }
