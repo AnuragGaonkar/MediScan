@@ -157,7 +157,7 @@ body {
 }
 
 /* ==========================================================================
-   REPORT CARDS
+   REPORT CARDS - FIXED HEIGHT FOR IMAGE/DETAILS, AUTO FOR PREDICTION
    ========================================================================== */
 .report-card {
   background: #fafafa;
@@ -165,10 +165,20 @@ body {
   border-radius: 10px;
   padding: clamp(16px, 3vw, 20px);
   text-align: center;
-  height: 100%;
+  min-height: 320px; /* ✅ BASE HEIGHT */
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+}
+
+/* ✅ ONLY PREDICTION CARD GROWS WITH CONTENT */
+.prediction-card {
+  min-height: 320px; /* ✅ Matches others when empty */
+  height: auto; /* ✅ GROWS with prediction text */
+}
+
+.report-card:not(.prediction-card) {
+  height: 320px; /* ✅ FIXED HEIGHT for image/details */
 }
 
 .report-card:hover {
@@ -228,8 +238,8 @@ body {
 .prediction-container {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  width: 100%;
 }
 
 .prediction-text {
@@ -242,9 +252,13 @@ body {
   color: #1e2f41;
   white-space: pre-wrap;
   width: 100%;
-  max-height: 180px;
-  overflow-y: auto;
+  /* ✅ NO SCROLL, FULL HEIGHT, GROWS WITH CONTENT */
+  height: auto;
+  min-height: 100px;
+  max-height: none;
+  overflow-y: visible;
   line-height: 1.6;
+  margin-top: auto;
 }
 
 .prediction-text:empty::before {
@@ -293,12 +307,12 @@ body {
 
 .predict-button.completed {
   background: var(--success-dark);
-  box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); /* ✨ Glow effect */
+  box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
   cursor: not-allowed;
 }
 
 .predict-button.completed:hover {
-  transform: none; /* No hover on completed */
+  transform: none;
 }
 
 .spinner {
@@ -373,5 +387,11 @@ body {
   }
   .app-container {
     padding: 12px;
+  }
+  .report-card {
+    min-height: 280px; /* Smaller on mobile */
+  }
+  .prediction-card {
+    min-height: 280px;
   }
 }
