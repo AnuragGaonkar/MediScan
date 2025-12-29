@@ -17,11 +17,11 @@ function App() {
     setImage(file);
     setPreview(URL.createObjectURL(file));
     setPrediction("");
-    setCompleted(false);
+    setCompleted(false); // ✅ Resets on new image
   };
 
   const handlePredict = async () => {
-    if (!image || loading) return;
+    if (!image || loading || completed) return; // ✅ Prevents re-click
 
     setLoading(true);
     setPrediction("");
@@ -120,7 +120,7 @@ function App() {
       <button
         className={`predict-button ${loading ? "loading" : ""} ${completed ? "completed" : ""}`}
         onClick={handlePredict}
-        disabled={!image || loading}
+        disabled={!image || loading || completed} // ✅ DISABLED after completion
       >
         {loading ? (
           <>

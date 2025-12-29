@@ -26,7 +26,7 @@
 
 html, body {
   width: 100%;
-  overflow-x: hidden; /* ✅ KILLS HORIZONTAL SCROLL */
+  overflow-x: hidden;
 }
 
 body {
@@ -85,7 +85,7 @@ body {
 
 .app-header p {
   margin-top: 6px;
-  font-size: 16px;
+  font-size: clamp(14px, 2.5vw, 16px);
   color: var(--text-secondary);
 }
 
@@ -94,7 +94,7 @@ body {
    ========================================================================== */
 .upload-section {
   background: var(--card-bg);
-  padding: 24px;
+  padding: clamp(20px, 4vw, 24px);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-light);
   width: 100%;
@@ -106,10 +106,10 @@ body {
   display: block;
   cursor: pointer;
   font-weight: 600;
-  font-size: 16px;
+  font-size: clamp(14px, 3vw, 16px);
   color: var(--text-primary);
   position: relative;
-  padding: 20px;
+  padding: clamp(16px, 4vw, 20px);
   border: 2px dashed var(--border-color);
   border-radius: 8px;
   text-align: center;
@@ -134,7 +134,7 @@ body {
    ========================================================================== */
 .report-section {
   background: var(--card-bg);
-  padding: 32px;
+  padding: clamp(24px, 5vw, 32px);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-heavy);
   width: 100%;
@@ -144,7 +144,7 @@ body {
 .report-title {
   text-align: center;
   margin-bottom: var(--spacing-lg);
-  font-size: 24px;
+  font-size: clamp(20px, 4vw, 24px);
   color: var(--primary-blue);
   font-weight: 700;
 }
@@ -152,7 +152,7 @@ body {
 .report-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
+  gap: clamp(20px, 3vw, 24px);
   width: 100%;
 }
 
@@ -163,7 +163,7 @@ body {
   background: #fafafa;
   border: 1px solid #e1e6ec;
   border-radius: 10px;
-  padding: 20px;
+  padding: clamp(16px, 3vw, 20px);
   text-align: center;
   height: 100%;
   display: flex;
@@ -178,7 +178,7 @@ body {
 
 .report-card h3 {
   margin-bottom: 16px;
-  font-size: 16px;
+  font-size: clamp(14px, 2.5vw, 16px);
   color: var(--primary-blue);
   font-weight: 600;
   padding-bottom: 8px;
@@ -216,11 +216,13 @@ body {
 .detail-label {
   font-weight: 600;
   color: var(--text-primary);
+  font-size: 14px;
 }
 
 .detail-value {
   color: #2ecc71;
   font-weight: 500;
+  font-size: 14px;
 }
 
 .prediction-container {
@@ -234,24 +236,30 @@ body {
   background: #eef3f7;
   border: 1px solid #d2dbe6;
   border-radius: 8px;
-  padding: 20px;
-  font-size: 14px;
+  padding: clamp(16px, 3vw, 20px);
+  font-size: clamp(13px, 2vw, 14px);
   font-weight: 600;
   color: #1e2f41;
   white-space: pre-wrap;
   width: 100%;
   max-height: 180px;
   overflow-y: auto;
+  line-height: 1.6;
+}
+
+.prediction-text:empty::before {
+  content: "No prediction yet...";
+  color: #95a5a6;
 }
 
 /* ==========================================================================
-   PREDICT BUTTON - GREEN EFFECT
+   PREDICT BUTTON - GREEN EFFECT + ✨ ENHANCEMENTS
    ========================================================================== */
 .predict-button {
   width: 100%;
   max-width: 420px;
-  padding: 16px 24px;
-  font-size: 16px;
+  padding: clamp(14px, 3vw, 16px) 24px;
+  font-size: clamp(15px, 2.5vw, 16px);
   font-weight: 600;
   background: var(--success-gradient);
   color: white;
@@ -276,6 +284,21 @@ body {
   background: #b5c2cf;
   cursor: not-allowed;
   transform: none;
+  box-shadow: var(--shadow-light);
+}
+
+.predict-button.loading {
+  background: var(--success-gradient);
+}
+
+.predict-button.completed {
+  background: var(--success-dark);
+  box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); /* ✨ Glow effect */
+  cursor: not-allowed;
+}
+
+.predict-button.completed:hover {
+  transform: none; /* No hover on completed */
 }
 
 .spinner {
@@ -306,22 +329,49 @@ body {
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 18px;
+  font-size: clamp(16px, 3vw, 18px);
   font-weight: 500;
   z-index: 1000;
 }
 
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-/* RESPONSIVE */
+/* ==========================================================================
+   RESPONSIVE - PERFECT MOBILE/DESKTOP
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .report-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .report-grid {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
   .app-container {
     padding: 16px;
+  }
+  .report-section {
+    padding: 24px 20px;
+  }
+  .upload-section {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header h1 {
+    font-size: 24px;
+  }
+  .app-container {
+    padding: 12px;
   }
 }
