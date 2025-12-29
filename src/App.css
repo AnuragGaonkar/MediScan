@@ -1,157 +1,228 @@
-/* General Page Styling */
+/* =========================
+   Global Reset & Base
+========================= */
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: 'Arial', sans-serif;
-  background-color: white;
   margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-/* Container Styling */
-.container {
-  text-align: center;
-  width: 95vw;
-  height: 95vh;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 10px;
-  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.title {
-  font-size: 22px;
-  color: #333;
-  margin-bottom: 15px;
-  font-weight: bold;
-}
-
-/* File Upload Section */
-.upload-section {
-  margin-bottom: 15px;
-  text-align: left;
-}
-
-.file-label {
-  font-weight: bold;
-  display: block;
-  margin-bottom: 5px;
-}
-
-.file-input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #fff;
-}
-
-/* Horizontal Report Layout */
-.horizontal-report {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  text-align: left;
-  margin-top: 20px;
-}
-
-.horizontal-report h2 {
-  font-size: 20px;
-  text-align: center;
-  color: #0056b3;
-  font-weight: bold;
-}
-
-hr {
-  border: 1px solid #ddd;
-  margin-bottom: 15px;
-}
-
-/* Flexbox for Horizontal Layout */
-.report-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
-}
-
-/* Individual Sections */
-.report-section {
-  flex: 1;
-  text-align: center;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background: #fff;
-}
-
-.image-section {
-  flex: 1.5;
-}
-
-.details-section, .findings-section {
-  flex: 1;
-}
-
-.report-section h3 {
-  font-size: 16px;
-  color: #444;
-  border-bottom: 2px solid #0056b3;
-  display: inline-block;
-  padding-bottom: 5px;
-  margin-bottom: 10px;
-}
-
-.report-section p {
-  font-size: 14px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, #eef2f7, #f9fbfd);
   color: #222;
 }
 
-/* Image Preview */
-.preview-image {
+/* =========================
+   Main Container
+========================= */
+.container {
+  max-width: 1200px;
+  min-height: 100vh;
+  margin: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* =========================
+   Header
+========================= */
+.header {
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #0a3d62;
+}
+
+.header p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #5f6f81;
+}
+
+/* =========================
+   Upload Section
+========================= */
+.upload-section {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.file-label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.upload-section input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #cfd6df;
+  border-radius: 6px;
+  background: #fdfefe;
+  cursor: pointer;
+}
+
+/* =========================
+   Report Card
+========================= */
+.report-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.report-card h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #0a3d62;
+  font-weight: 700;
+}
+
+/* =========================
+   Report Grid
+========================= */
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* =========================
+   Individual Cards
+========================= */
+.card {
+  background: #fafafa;
+  border: 1px solid #e1e6ec;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+
+.card h3 {
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: #0a3d62;
+  font-weight: 600;
+  border-bottom: 2px solid #e3ebf3;
+  display: inline-block;
+  padding-bottom: 4px;
+}
+
+/* =========================
+   Image Card
+========================= */
+.image-card img {
   max-width: 100%;
   height: auto;
-  display: block;
-  margin: auto;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  padding: 5px;
-  background: #f5f5f5;
+  border-radius: 8px;
+  border: 1px solid #d5dbe3;
+  background: #f4f6f9;
+  padding: 6px;
 }
 
-/* Prediction Styling */
-.prediction {
-  font-size: 16px;
-  font-weight: bold;
+/* =========================
+   Details Text
+========================= */
+.card p {
+  margin: 6px 0;
+  font-size: 14px;
   color: #333;
-  padding: 10px;
-  background: #e9ecef;
-  border-radius: 5px;
-  text-align: center;
-  border: 1px solid #ccc;
 }
 
-/* Predict Button */
+/* =========================
+   Prediction Box
+========================= */
+.prediction-box {
+  background: #eef3f7;
+  border: 1px solid #d2dbe6;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: pre-wrap;
+  color: #1e2f41;
+}
+
+/* =========================
+   Predict Button
+========================= */
 .predict-btn {
-  margin-top: 15px;
-  padding: 10px 20px;
-  font-size: 16px;
-  background: #28a745;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: 0.3s;
-  display: block;
+  margin-top: auto;
+  padding: 14px;
   width: 100%;
+  font-size: 16px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .predict-btn:hover {
-  background: #218838;
+  background: linear-gradient(135deg, #27ae60, #219150);
+}
+
+.predict-btn:disabled {
+  background: #b5c2cf;
+  cursor: not-allowed;
+}
+
+/* Completed state */
+.predict-btn.done {
+  background: linear-gradient(135deg, #3498db, #2c80c9);
+}
+
+/* =========================
+   Loader Text
+========================= */
+.loader {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
+
+/* =========================
+   Mobile Responsive
+========================= */
+@media (max-width: 900px) {
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 14px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+  }
+
+  .header p {
+    font-size: 13px;
+  }
+
+  .predict-btn {
+    font-size: 15px;
+    padding: 12px;
+  }
 }
