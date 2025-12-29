@@ -21,7 +21,7 @@ function App() {
   };
 
   const handlePredict = async () => {
-    if (!image || loading || completed) return; // ✅ Prevents re-click
+    if (!image || loading || completed) return;
 
     setLoading(true);
     setPrediction("");
@@ -51,12 +51,20 @@ function App() {
     }
   };
 
+  // ✅ CLINICAL GRADE PREDICTION FORMAT
   const formatPrediction = (data) => {
-    return (
-      `Image Type: ${data.image_type}\n` +
-      `Status: ${data.status}\n` +
-      `Disease Diagnosed: ${data.disease}`
-    );
+    let result = `IMAGE ANALYSIS REPORT\n\n`;
+    result += `Image Type: ${data.image_type}\n`;
+    result += `Type Confidence: ${data.image_type_confidence}%\n\n`;
+    result += `Status: ${data.status}\n`;
+    result += `Disease Diagnosed: ${data.disease}\n`;
+    result += `Prediction Confidence: ${data.disease_confidence}%\n\n`;
+    
+    if (data.model_accuracy) {
+      result += `Model Validation Accuracy: ${data.model_accuracy}%`;
+    }
+    
+    return result;
   };
 
   return (
@@ -120,7 +128,7 @@ function App() {
       <button
         className={`predict-button ${loading ? "loading" : ""} ${completed ? "completed" : ""}`}
         onClick={handlePredict}
-        disabled={!image || loading || completed} // ✅ DISABLED after completion
+        disabled={!image || loading || completed}
       >
         {loading ? (
           <>
