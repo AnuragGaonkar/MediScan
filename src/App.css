@@ -1,251 +1,201 @@
 /* ==========================================================================
-   ROOT VARIABLES & RESET
+   ROOT VARIABLES & RESET - CLEAN WHITE/BLUE LIKE ORIGINAL
    ========================================================================== */
 :root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  --success-dark: linear-gradient(135deg, #0e7a6b 0%, #2ac97a 100%);
-  --accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  --card-bg: rgba(255, 255, 255, 0.95);
-  --text-primary: #2c3e50;
-  --text-secondary: #7f8c8d;
-  --border-color: rgba(0, 0, 0, 0.08);
-  --shadow-light: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.12);
-  --border-radius: 20px;
-  --spacing-sm: 12px;
-  --spacing-md: 24px;
-  --spacing-lg: 32px;
+  --primary-blue: #0a3d62;
+  --primary-light: #eef2f7;
+  --success-gradient: linear-gradient(135deg, #2ecc71, #27ae60);
+  --success-dark: linear-gradient(135deg, #27ae60, #219150);
+  --card-bg: #ffffff;
+  --text-primary: #222;
+  --text-secondary: #5f6f81;
+  --border-color: #cfd6df;
+  --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-heavy: 0 6px 18px rgba(0, 0, 0, 0.06);
+  --border-radius: 12px;
+  --spacing-sm: 16px;
+  --spacing-md: 20px;
+  --spacing-lg: 24px;
 }
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: var(--bg-gradient);
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--primary-light);
   color: var(--text-primary);
   min-height: 100vh;
-  line-height: 1.6;
-  backdrop-filter: blur(10px);
 }
 
 /* ==========================================================================
-   MAIN APP CONTAINER
+   MAIN APP CONTAINER - PERFECTLY CENTERED
    ========================================================================== */
 .app-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: clamp(20px, 5vw, 40px);
+  padding: 20px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  position: relative;
+  align-items: center; /* ✅ CENTERED */
 }
 
 .app-container.no-preview {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding-top: clamp(40px, 15vh, 100px);
-  padding-bottom: clamp(40px, 15vh, 100px);
+  padding: 40px 20px;
+}
+
+.app-container.no-preview > * {
+  width: 100%;
+  max-width: 420px; /* ✅ Perfect centered width */
 }
 
 .app-container.has-preview {
-  padding-top: clamp(20px, 4vw, 40px);
+  align-items: stretch;
 }
 
 /* ==========================================================================
-   HEADER
+   HEADER - CENTERED
    ========================================================================== */
 .app-header {
   text-align: center;
-  margin-bottom: var(--spacing-sm);
+  width: 100%;
 }
 
 .app-header h1 {
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  font-weight: 800;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 8px;
-  letter-spacing: -0.02em;
+  margin: 0;
+  font-size: clamp(28px, 5vw, 36px);
+  font-weight: 700;
+  color: var(--primary-blue);
 }
 
 .app-header p {
-  font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+  margin-top: 6px;
+  font-size: 16px;
   color: var(--text-secondary);
-  font-weight: 400;
-  max-width: 400px;
-  margin: 0 auto;
 }
 
 /* ==========================================================================
-   UPLOAD SECTION
+   UPLOAD SECTION - CLEAN WHITE CARD
    ========================================================================== */
 .upload-section {
   background: var(--card-bg);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 24px;
   border-radius: var(--border-radius);
-  padding: clamp(24px, 4vw, 32px);
   box-shadow: var(--shadow-light);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.upload-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--primary-gradient);
-}
-
-.upload-section:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--border-color);
 }
 
 .file-label {
   display: block;
   cursor: pointer;
-  position: relative;
   font-weight: 600;
-  font-size: clamp(1rem, 2.5vw, 1.125rem);
+  font-size: 16px;
   color: var(--text-primary);
-  transition: color 0.3s ease;
+  position: relative;
+  padding: 12px;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.3s ease;
 }
 
 .file-label:hover {
-  color: #667eea;
+  border-color: #2ecc71;
+  background: rgba(46, 204, 113, 0.05);
 }
 
 .file-input {
-  display: block;
-  width: 100%;
-  height: 0;
-  opacity: 0;
   position: absolute;
-  top: 0;
-  left: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
 }
 
 /* ==========================================================================
-   REPORT SECTION (Desktop: 3-column, Tablet: 2-column, Mobile: 1-column)
+   REPORT SECTION
    ========================================================================== */
 .report-section {
   background: var(--card-bg);
-  backdrop-filter: blur(20px);
+  padding: 32px;
   border-radius: var(--border-radius);
-  padding: clamp(32px, 5vw, 48px);
-  box-shadow: var(--shadow-light);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-heavy);
+  width: 100%;
+  border: 1px solid var(--border-color);
 }
 
 .report-title {
   text-align: center;
-  font-size: clamp(1.5rem, 4vw, 2rem);
-  font-weight: 700;
-  color: var(--text-primary);
   margin-bottom: var(--spacing-lg);
-  position: relative;
-}
-
-.report-title::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 4px;
-  background: var(--primary-gradient);
-  border-radius: 2px;
+  font-size: 24px;
+  color: var(--primary-blue);
+  font-weight: 700;
 }
 
 .report-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(20px, 3vw, 32px);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
 }
 
 /* ==========================================================================
    REPORT CARDS
    ========================================================================== */
 .report-card {
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 16px;
-  padding: clamp(20px, 3vw, 28px);
+  background: #fafafa;
+  border: 1px solid #e1e6ec;
+  border-radius: 10px;
+  padding: 20px;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
   height: 100%;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
 }
 
 .report-card:hover {
+  box-shadow: var(--shadow-heavy);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
 }
 
 .report-card h3 {
-  font-size: clamp(0.95rem, 2vw, 1.1rem);
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: clamp(16px, 2.5vw, 20px);
-  padding-bottom: 12px;
-  position: relative;
+  margin-bottom: 16px;
+  font-size: 16px;
+  color: var(--primary-blue);
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e3ebf3;
 }
 
-.report-card h3::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 3px;
-  background: var(--primary-gradient);
-  border-radius: 2px;
-}
-
-/* Image Card Specific */
-.image-card .image-container {
+/* Image Card */
+.image-container {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 12px;
-  border: 2px dashed rgba(102, 126, 234, 0.2);
-  overflow: hidden;
+  background: #f4f6f9;
+  border-radius: 8px;
+  border: 1px solid #d5dbe3;
 }
 
-.image-card img {
+.image-container img {
   max-width: 100%;
   max-height: 200px;
   object-fit: contain;
-  border-radius: 8px;
 }
 
-/* Details Card Specific */
+/* Details Card */
 .details-card {
-  display: flex;
-  flex-direction: column;
   gap: 12px;
 }
 
@@ -253,97 +203,87 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
 .detail-label {
   font-weight: 600;
   color: var(--text-primary);
-  font-size: 0.9rem;
 }
 
 .detail-value {
-  color: #667eea;
+  color: #2ecc71;
   font-weight: 500;
-  font-size: 0.9rem;
 }
 
-/* Prediction Card Specific */
+/* Prediction Card */
 .prediction-container {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
 }
 
 .prediction-text {
-  background: rgba(102, 126, 234, 0.1);
-  border: 2px solid rgba(102, 126, 234, 0.2);
-  border-radius: 12px;
-  padding: clamp(16px, 3vw, 24px);
-  font-size: clamp(0.9rem, 2vw, 1rem);
-  font-weight: 500;
-  color: var(--text-primary);
+  background: #eef3f7;
+  border: 1px solid #d2dbe6;
+  border-radius: 8px;
+  padding: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e2f41;
   white-space: pre-wrap;
-  text-align: left;
   width: 100%;
   max-height: 180px;
   overflow-y: auto;
-  line-height: 1.6;
 }
 
 /* ==========================================================================
-   PREDICT BUTTON
+   PREDICT BUTTON - GREEN EFFECT ONLY
    ========================================================================== */
 .predict-button {
+  width: 100%;
+  max-width: 420px;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
   background: var(--success-gradient);
   color: white;
   border: none;
-  padding: clamp(16px, 3vw, 20px);
-  font-size: clamp(1rem, 2.5vw, 1.125rem);
-  font-weight: 700;
   border-radius: var(--border-radius);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
   box-shadow: var(--shadow-light);
-  position: relative;
-  overflow: hidden;
-  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  max-width: 500px;
-  margin: 0 auto;
 }
 
 .predict-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
   background: var(--success-dark);
+  box-shadow: var(--shadow-heavy);
+  transform: translateY(-2px);
 }
 
 .predict-button:disabled {
-  background: #bdc3c7;
+  background: #b5c2cf;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .predict-button.loading {
-  background: var(--primary-gradient);
+  background: var(--success-gradient);
 }
 
 .predict-button.completed {
   background: var(--success-dark);
-  animation: pulse 2s infinite;
 }
 
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255,255,255,0.3);
   border-top: 2px solid white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -363,16 +303,14 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.1rem;
+  font-size: 18px;
   font-weight: 500;
   z-index: 1000;
-  animation: fadeIn 0.3s ease;
 }
 
 /* ==========================================================================
@@ -383,37 +321,17 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 /* ==========================================================================
-   RESPONSIVE BREAKPOINTS
+   RESPONSIVE DESIGN
    ========================================================================== */
-
-/* Tablet Portrait */
-@media (max-width: 1024px) {
-  .report-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Tablet Landscape & Large Mobile */
 @media (max-width: 768px) {
-  .app-container {
-    padding: 16px;
-    gap: 20px;
-  }
-  
   .report-grid {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+  
+  .app-container {
+    padding: 16px;
   }
   
   .report-section {
@@ -421,33 +339,16 @@ body {
   }
   
   .upload-section {
-    padding: 24px 20px;
+    padding: 20px;
   }
 }
 
-/* Mobile */
 @media (max-width: 480px) {
-  .app-container {
-    padding: 12px;
-  }
-  
   .app-header h1 {
-    font-size: 2rem;
+    font-size: 24px;
   }
   
   .predict-button {
-    font-size: 1rem;
-    padding: 16px;
-  }
-}
-
-/* Small Mobile */
-@media (max-width: 360px) {
-  .app-container {
-    padding: 8px;
-  }
-  
-  .report-card {
-    padding: 16px;
+    font-size: 15px;
   }
 }
