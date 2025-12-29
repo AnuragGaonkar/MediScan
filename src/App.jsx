@@ -5,7 +5,7 @@ function App() {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [prediction, setPrediction] = useState('');
-
+  const API_URL = process.env.REACT_APP_API_URL;
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -22,7 +22,7 @@ function App() {
     formData.append('file', image);
 
     try {
-      const res = await fetch('http://localhost:5000/predict', {
+      const res = await fetch('${API_URL}/predict', {
         method: 'POST',
         body: formData,
       });
