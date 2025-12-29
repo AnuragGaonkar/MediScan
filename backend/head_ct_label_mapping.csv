@@ -1,0 +1,8 @@
+Label,Index
+Alzheimers- Mild Dementia,0
+Alzheimers- Moderate Dementia,1
+Alzheimers- Very Mild Dementia,2
+Normal,3
+Tumor-glioma,4
+Tumor-meningioma,5
+Tumor-pituitary,6
