@@ -60,63 +60,84 @@ function App() {
   };
 
   return (
-    /* 🔑 THIS IS THE CRITICAL FIX */
-    <div className={`container ${preview ? "has-preview" : "no-preview"}`}>
-      
-      <header className="header">
+    <div className={`app-container ${preview ? "has-preview" : "no-preview"}`}>
+      <header className="app-header">
         <h1>MediScan</h1>
         <p>Medical Image Disease Classification</p>
       </header>
 
       <div className="upload-section">
-        <label className="file-label">Upload Medical Image</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-        />
+        <label className="file-label">
+          <span>Upload Medical Image</span>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="file-input"
+          />
+        </label>
       </div>
 
       {preview && (
-        <div className="report-card">
-          <h2>Scan Report</h2>
-
+        <div className="report-section">
+          <h2 className="report-title">Scan Report</h2>
           <div className="report-grid">
-            <div className="card image-card">
+            <div className="report-card image-card">
               <h3>Uploaded Image</h3>
-              <img src={preview} alt="Scan preview" />
+              <div className="image-container">
+                <img src={preview} alt="Medical scan preview" />
+              </div>
             </div>
 
-            <div className="card">
-              <h3>Details</h3>
-              <p><b>File:</b> {image?.name}</p>
-              <p><b>Type:</b> {image?.type}</p>
-              <p><b>Resolution:</b> Auto-detected</p>
+            <div className="report-card details-card">
+              <h3>Image Details</h3>
+              <div className="detail-item">
+                <span className="detail-label">File:</span>
+                <span className="detail-value">{image?.name}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Type:</span>
+                <span className="detail-value">{image?.type}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Size:</span>
+                <span className="detail-value">{(image?.size / 1024 / 1024).toFixed(2)} MB</span>
+              </div>
             </div>
 
-            <div className="card">
-              <h3>Prediction</h3>
-              <pre className="prediction-box">
-                {prediction || "No prediction yet"}
-              </pre>
+            <div className="report-card prediction-card">
+              <h3>AI Prediction</h3>
+              <div className="prediction-container">
+                <pre className="prediction-text">
+                  {prediction || "No prediction yet..."}
+                </pre>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       <button
-        className={`predict-btn ${completed ? "done" : ""}`}
+        className={`predict-button ${loading ? "loading" : ""} ${completed ? "completed" : ""}`}
         onClick={handlePredict}
         disabled={!image || loading}
       >
-        {loading
-          ? "Analyzing Scan..."
-          : completed
-          ? "Completed ✓"
-          : "Predict"}
+        {loading ? (
+          <>
+            <span className="spinner"></span>
+            Analyzing Scan...
+          </>
+        ) : completed ? (
+          <>
+            <span className="checkmark">✓</span>
+            Analysis Complete
+          </>
+        ) : (
+          "Run Analysis"
+        )}
       </button>
 
-      {loading && <div className="loader">Processing image…</div>}
+      {loading && <div className="loading-overlay">Processing your medical image...</div>}
     </div>
   );
 }
