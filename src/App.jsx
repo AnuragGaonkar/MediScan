@@ -5,7 +5,7 @@ function App() {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [prediction, setPrediction] = useState('');
-  const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL;
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
