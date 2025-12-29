@@ -33,6 +33,9 @@ body {
 /* ==========================================================================
    MAIN APP CONTAINER - PERFECTLY CENTERED
    ========================================================================== */
+/* ==========================================================================
+   MAIN APP CONTAINER - PERFECTLY CENTERED (FIXED)
+   ========================================================================== */
 .app-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -49,16 +52,21 @@ body {
   align-items: center;
   min-height: 100vh;
   padding: 40px 20px;
+  width: 100%; /* ✅ ADDED */
 }
 
 .app-container.no-preview > * {
   width: 100%;
   max-width: 420px; /* ✅ Perfect centered width */
+  margin: 0 auto; /* ✅ EXTRA CENTERING */
+  display: block; /* ✅ FORCE BLOCK */
 }
 
 .app-container.has-preview {
   align-items: stretch;
+  max-width: 1200px;
 }
+
 
 /* ==========================================================================
    HEADER - CENTERED
