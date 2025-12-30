@@ -176,7 +176,7 @@ function App() {
         )}
       </button>
 
-      {loading && <div className="loading-overlay">🔬 Processing your medical image...</div>}
+      {loading && <div className="loading-overlay"> Processing your medical image...</div>}
     </div>
   );
 }

@@ -11,11 +11,23 @@ import traceback
 # ============================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-def path(filename): 
+def path(filename):
     return os.path.join(BASE_DIR, filename)
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+# ============================================================
+# SAFETY PARAMETERS (CORE FIX)
+# ============================================================
+
+MIN_CONFIDENCE = 88.0
+
+IMPOSSIBLE_PAIRS = {
+    "BreastMRI": ["AbdomenCT", "ChestCT", "CXR"],
+    "CXR": ["AbdomenCT", "HeadCT", "BreastMRI"],
+    "HeadCT": ["CXR", "BreastMRI"],
+}
 
 # ============================================================
 # MEDICAL IMAGE VALIDATION (UNCHANGED)
@@ -36,49 +48,41 @@ def is_likely_medical_image(image):
     skin_mask = cv2.inRange(hsv, np.array([0, 30, 60]), np.array([20, 255, 255]))
     skin_ratio = np.sum(skin_mask > 0) / (image.shape[0] * image.shape[1])
 
-    if skin_ratio > 0.25:
-        return False
-
-    return True
+    return skin_ratio <= 0.25
 
 # ============================================================
-# 🔥 NEW: ANATOMICAL REGION HEURISTIC (CRITICAL FIX)
+# ANATOMICAL REGION HINT (WEAK, NON-DESTRUCTIVE)
 # ============================================================
 
 def anatomical_region_hint(image):
-    """
-    Lightweight anatomical gating.
-    Prevents impossible ML predictions.
-    """
-
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    h, w = gray.shape
     mean = np.mean(gray)
     std = np.std(gray)
 
-    h, w = gray.shape
-    aspect_ratio = w / h
-
-    # Head CT: round skull, very high contrast
-    if std > 65 and 0.9 < aspect_ratio < 1.1:
+    _, bone = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+    bone_ratio = np.sum(bone == 255) / (h * w)
+    if bone_ratio > 0.18:
         return "HeadCT"
 
-    # Chest CT / X-ray: large dark lung regions
-    dark_ratio = np.sum(gray < 80) / gray.size
-    if dark_ratio > 0.35:
+    dark_ratio = np.sum(gray < 60) / gray.size
+    if dark_ratio > 0.45:
+        return "CXR"
+
+    if dark_ratio > 0.30 and std > 60:
         return "ChestCT"
 
-    # Abdomen CT: mixed soft tissue, moderate contrast
-    if 40 < std < 70 and mean > 90:
+    center = gray[h//3:2*h//3, w//3:2*w//3]
+    if 25 < np.std(center) < 60:
         return "AbdomenCT"
 
-    # Breast MRI: smoother texture, lower contrast
-    if std < 45 and mean > 100:
+    if std < 40 and mean > 90:
         return "BreastMRI"
 
     return "Unknown"
 
 # ============================================================
-# CORE ML UTILITIES (UNCHANGED)
+# CORE ML UTILITIES
 # ============================================================
 
 def softmax(z):
@@ -93,66 +97,11 @@ def load_and_preprocess_image(image, image_size=(64, 64)):
 def feature_scaling(x, mean, std):
     return (x - mean) / (np.maximum(std, 1e-8))
 
-# ================================
-# ADD THIS ABOVE predict_image_type
-# ================================
-
-def anatomical_region_hint(image):
-    """
-    Coarse anatomical gating.
-    Narrows down possible modalities.
-    """
-
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    h, w = gray.shape
-    mean = np.mean(gray)
-    std = np.std(gray)
-
-    # -------------------------------
-    # HEAD CT → Skull ring detection
-    # -------------------------------
-    _, bone = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
-    bone_ratio = np.sum(bone == 255) / (h * w)
-
-    if bone_ratio > 0.18:
-        return "HeadCT"
-
-    # -------------------------------
-    # CXR → Large lung air regions
-    # -------------------------------
-    dark_ratio = np.sum(gray < 60) / gray.size
-    if dark_ratio > 0.40 and std < 70:
-        return "CXR"
-
-    # -------------------------------
-    # CHEST CT → lungs + mediastinum
-    # -------------------------------
-    if dark_ratio > 0.30 and std > 60:
-        return "ChestCT"
-
-    # -------------------------------
-    # ABDOMEN CT → spine + organs
-    # -------------------------------
-    center = gray[h//3:2*h//3, w//3:2*w//3]
-    center_std = np.std(center)
-
-    if 25 < center_std < 60:
-        return "AbdomenCT"
-
-    # -------------------------------
-    # BREAST MRI → smooth textures
-    # -------------------------------
-    if std < 40 and mean > 90:
-        return "BreastMRI"
-
-    return "Unknown"
-
-
 # ============================================================
-# IMAGE TYPE CLASSIFICATION (UNCHANGED)
+# IMAGE TYPE CLASSIFICATION (UNCHANGED MODEL)
 # ============================================================
 
-def predict_image_type(img_flattened):
+def predict_image_type(img_flat):
     W = np.loadtxt(path("softmax_weights.csv"), delimiter=",")
     b = np.loadtxt(path("softmax_bias.csv"), delimiter=",")
     X_mean = np.loadtxt(path("train_mean.csv"), delimiter=",")
@@ -160,20 +109,20 @@ def predict_image_type(img_flattened):
     label_df = pd.read_csv(path("label_mapping.csv"))
     label_map = dict(zip(label_df["Index"], label_df["Label"]))
 
-    img_processed = feature_scaling(img_flattened, X_mean, X_std)
-    z = np.dot(img_processed, W) + b
+    img_scaled = feature_scaling(img_flat, X_mean, X_std)
+    z = np.dot(img_scaled, W) + b
     probs = softmax(z)
 
-    pred_class = int(np.argmax(probs))
-    confidence = float(np.max(probs) * 100)
+    cls = int(np.argmax(probs))
+    conf = float(np.max(probs) * 100)
 
-    return label_map.get(pred_class, "Unknown"), img_flattened, confidence
+    return label_map.get(cls, "Unknown"), conf
 
 # ============================================================
-# DISEASE PREDICTION (UNCHANGED)
+# DISEASE PREDICTION (UNCHANGED MODELS)
 # ============================================================
 
-def predict_disease(image_type, img_flattened):
+def predict_disease(image_type, img_flat):
 
     MODEL_CONFIGS = {
         "AbdomenCT": {
@@ -208,8 +157,8 @@ def predict_disease(image_type, img_flattened):
         "ChestCT": {
             "weights": "chest_softmax_weights.csv",
             "bias": "chest_softmax_bias.csv",
-            "mean": None,
-            "std": None,
+            "mean": "chest_train_mean.csv",
+            "std": "chest_train_std.csv",
             "labels": {
                 0: "Adenocarcinoma LLL T2",
                 1: "Large Cell Carcinoma LHL T2",
@@ -232,25 +181,21 @@ def predict_disease(image_type, img_flattened):
     cfg = MODEL_CONFIGS[image_type]
     W = np.loadtxt(path(cfg["weights"]), delimiter=",")
     b = np.loadtxt(path(cfg["bias"]), delimiter=",").reshape(1, -1)
+    mean = np.loadtxt(path(cfg["mean"]), delimiter=",")
+    std = np.loadtxt(path(cfg["std"]), delimiter=",")
 
-    if image_type == "ChestCT":
-        img_processed = (img_flattened - np.mean(img_flattened)) / (np.std(img_flattened) + 1e-8)
-    else:
-        mean = np.loadtxt(path(cfg["mean"]), delimiter=",")
-        std = np.loadtxt(path(cfg["std"]), delimiter=",")
-        img_processed = feature_scaling(img_flattened, mean, std)
-
+    img_processed = feature_scaling(img_flat, mean, std)
     z = np.dot(img_processed.reshape(1, -1), W) + b
     probs = softmax(z)
 
-    pred_class = int(np.argmax(probs))
-    confidence = float(np.max(probs) * 100)
-    label = cfg["labels"].get(pred_class, "Unknown")
+    cls = int(np.argmax(probs))
+    conf = float(np.max(probs) * 100)
+    label = cfg["labels"].get(cls, "Unknown")
 
     status = "Diseased" if label != "Normal" else "Healthy"
     disease = label if status == "Diseased" else "Normal"
 
-    return status, disease, confidence
+    return status, disease, conf
 
 # ============================================================
 # API ROUTES
@@ -281,17 +226,27 @@ def upload():
 
         img_flat = load_and_preprocess_image(image)
 
-        # --- NEW HYBRID DECISION ---
         anatomy_hint = anatomical_region_hint(image)
-        ml_type, _, ml_conf = predict_image_type(img_flat)
+        ml_type, ml_conf = predict_image_type(img_flat)
 
         FINAL_TYPE = ml_type
         FINAL_CONF = ml_conf
 
-        if anatomy_hint != "Unknown" and anatomy_hint != ml_type:
-            print(f"⚠️ Conflict: ML={ml_type}, Anatomy={anatomy_hint}")
-            FINAL_TYPE = anatomy_hint
-            FINAL_CONF = min(ml_conf, 85.0)
+        if anatomy_hint != "Unknown":
+            blocked = IMPOSSIBLE_PAIRS.get(anatomy_hint, [])
+            if ml_type in blocked:
+                FINAL_TYPE = anatomy_hint
+                FINAL_CONF = min(ml_conf, 85.0)
+
+        # -------- CONFIDENCE-AWARE REJECTION --------
+        if FINAL_CONF < MIN_CONFIDENCE:
+            return jsonify({
+                "image_type": "Uncertain",
+                "image_type_confidence": round(FINAL_CONF, 1),
+                "status": "Review Required",
+                "disease": "Low confidence – manual review suggested",
+                "disease_confidence": 0.0
+            })
 
         status, disease, disease_conf = predict_disease(FINAL_TYPE, img_flat)
 
@@ -303,9 +258,9 @@ def upload():
             "disease_confidence": round(disease_conf, 1)
         })
 
-    except Exception as e:
+    except Exception:
         print(traceback.format_exc())
-        return jsonify({"error": f"Server error: {str(e)}"}), 500
+        return jsonify({"error": "Server error"}), 500
 
 # ============================================================
 # ENTRY POINT
