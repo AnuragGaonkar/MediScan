@@ -22,38 +22,26 @@ MODEL_ACCURACIES = {
     "BreastMRI": 93.2
 }
 
-# 🚀 BULLETPROOF MEDICAL IMAGE VALIDATION (Render-safe + Your models preserved)
+# ✅ MEDICAL IMAGE VALIDATION
 def is_likely_medical_image(image):
-    """3-stage validation: Skin(18%) + Saturation + Edges - NO haarcascades"""
-    if image is None or image.size == 0:
+    """Validate if image looks like medical scan (not photo/selfie)"""
+    if image is None:
         return False
     
-    h, w = image.shape[:2]
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # STAGE 1: Medical scan properties (stricter for selfies)
     mean_intensity = np.mean(gray)
     contrast = np.std(gray)
-    if contrast < 50 or mean_intensity < 80 or mean_intensity > 190:
+    
+    # Medical scans: high contrast (40-120), mid brightness (60-200)
+    if contrast < 35 or mean_intensity < 50 or mean_intensity > 210:
         return False
     
-    # STAGE 2: Skin detection (18% threshold = selfies rejected)
+    # Check for skin-like colors (common in selfies)
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    skin_mask = cv2.inRange(hsv, np.array([0, 20, 60]), np.array([25, 255, 255]))
-    skin_ratio = np.sum(skin_mask > 0) / (h * w)
+    skin_pixels = np.sum((hsv[:,:,0] > 0) & (hsv[:,:,0] < 20) & (hsv[:,:,1] > 30))
+    total_pixels = image.shape[0] * image.shape[1]
     
-    if skin_ratio > 0.18:  # Selfies: 35-60% → REJECTED
-        return False
-    
-    # STAGE 3: Saturation check (medical = grayscale-ish)
-    saturation = np.mean(hsv[:,:,1])
-    if saturation > 55:  # Photos are colorful
-        return False
-    
-    # STAGE 4: Edge density (medical images have patterns)
-    edges = cv2.Canny(gray, 60, 160)
-    edge_ratio = np.sum(edges > 0) / (h * w)
-    if edge_ratio < 0.10:
+    if skin_pixels / total_pixels > 0.3:  # >30% skin pixels = likely photo
         return False
     
     return True
@@ -72,7 +60,7 @@ def load_and_preprocess_image(image, image_size=(64, 64)):
 def feature_scaling(image_data, mean, std):
     return (image_data - mean) / (std + 1e-8)
 
-# ✅ Image Type Prediction with confidence (YOUR 99.3% MODEL)
+# ✅ Image Type Prediction with confidence
 def predict_image_type(img_flattened):
     W = np.loadtxt(path("softmax_weights.csv"), delimiter=",")
     b = np.loadtxt(path("softmax_bias.csv"), delimiter=",")
@@ -90,7 +78,7 @@ def predict_image_type(img_flattened):
 
     return predicted_type, img_flattened, confidence
 
-# ✅ Disease Prediction with confidence (YOUR 10k image models)
+# ✅ Disease Prediction with confidence
 def predict_disease(image_type, img_flattened):
     model_configs = {
         "AbdomenCT": {
@@ -170,25 +158,17 @@ def health():
 
 @app.route("/predict", methods=["POST"])
 def upload():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-    
     file = request.files["file"]
-    if file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-    
-    # Read image
-    npimg = np.frombuffer(file.read(), np.uint8)
-    image = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
+    image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
 
     if image is None:
-        return jsonify({"error": "Invalid image format"}), 400
+        return jsonify({"error": "Invalid image"}), 400
 
-    # 🚀 NEW BULLETPROOF VALIDATION (Your models untouched)
+    # ✅ CRITICAL: MEDICAL IMAGE VALIDATION
     if not is_likely_medical_image(image):
         return jsonify({
             "error": "Not a medical image",
-            "message": "❌ Please upload CT/MRI/X-Ray scans only. Detected: selfie/photo.",
+            "message": "Please upload CT/MRI/X-Ray scans only. This appears to be a photo/selfie.",
             "image_type": "Non-medical",
             "image_type_confidence": 0.0,
             "status": "Invalid",
@@ -197,7 +177,6 @@ def upload():
             "model_accuracy": None
         }), 400
 
-    # ✅ YOUR 99.3% MODELS RUN EXACTLY SAME
     img_flattened = load_and_preprocess_image(image)
     predicted_type, img_flattened, type_confidence = predict_image_type(img_flattened)
     disease_status, disease_type, disease_confidence = predict_disease(predicted_type, img_flattened)
@@ -214,4 +193,4 @@ def upload():
     return jsonify(response)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
