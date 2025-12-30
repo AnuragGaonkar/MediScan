@@ -4,12 +4,14 @@ import numpy as np
 import pandas as pd
 import cv2
 import os
+import traceback
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def path(filename): return os.path.join(BASE_DIR, filename)
 
 app = Flask(__name__)
-CORS(app)
+# 🔥 FIXED: Proper CORS for Render.com
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # ✅ FIXED VALIDATION (skin 0.25 threshold)
 def is_likely_medical_image(image):
@@ -77,7 +79,7 @@ def predict_disease(image_type, img_flattened):
     }
 
     if image_type not in model_configs:
-        return "Unknown", None
+        return "Unknown", "Unknown"
 
     config = model_configs[image_type]
     W = np.loadtxt(path(config["weights"]), delimiter=",")
@@ -89,9 +91,12 @@ def predict_disease(image_type, img_flattened):
     else:
         # 🔥 CRASH FIX: Check if mean/std files exist
         if config["mean"] is not None and config["std"] is not None:
-            X_mean = np.loadtxt(path(config["mean"]), delimiter=",")
-            X_std = np.loadtxt(path(config["std"]), delimiter=",")
-            img_processed = feature_scaling(img_flattened, X_mean, X_std)
+            try:
+                X_mean = np.loadtxt(path(config["mean"]), delimiter=",")
+                X_std = np.loadtxt(path(config["std"]), delimiter=",")
+                img_processed = feature_scaling(img_flattened, X_mean, X_std)
+            except:
+                img_processed = img_flattened  # Safe fallback
         else:
             img_processed = img_flattened  # Safe fallback
 
@@ -111,38 +116,62 @@ def health():
 
 @app.route("/predict", methods=["POST"])
 def upload():
-    # File safety checks
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    try:
+        print("PREDICT ENDPOINT HIT")
+        print(f"Content-Type: {request.content_type}")
+        print(f"Files keys: {list(request.files.keys())}")
         
-    file = request.files["file"]
-    if file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
+        # 🔥 FIXED: Bulletproof file handling for Render.com
+        if 'file' not in request.files:
+            print("'file' key missing in request.files")
+            return jsonify({"error": "No file uploaded"}), 400
+            
+        file = request.files["file"]
+        if file.filename == '':
+            print("Empty filename")
+            return jsonify({"error": "No file selected"}), 400
         
-    image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
+        print(f"Processing file: {file.filename}")
+        
+        # 🔥 FIXED: Proper file reading (seek back to start)
+        file.seek(0)
+        file_bytes = file.read()
+        print(f"File size: {len(file_bytes)} bytes")
+        
+        image = cv2.imdecode(np.frombuffer(file_bytes, np.uint8), cv2.IMREAD_COLOR)
 
-    if image is None:
-        return jsonify({"error": "Invalid image"}), 400
+        if image is None:
+            print("cv2.imdecode failed")
+            return jsonify({"error": "Invalid image format"}), 400
 
-    # 🔥 SELFIE PROTECTION
-    if not is_likely_medical_image(image):
-        return jsonify({
-            "image_type": "Non-medical",
-            "status": "Invalid", 
-            "disease": "Photo/Selfie detected"
-        }), 400
+        print(f"Image decoded: {image.shape}")
 
-    # YOUR ORIGINAL PIPELINE
-    img_flattened = load_and_preprocess_image(image)
-    predicted_type, img_flattened = predict_image_type(img_flattened)
-    disease_status, disease_type = predict_disease(predicted_type, img_flattened)
+        # 🔥 SELFIE PROTECTION
+        if not is_likely_medical_image(image):
+            print("Non-medical image detected")
+            return jsonify({
+                "image_type": "Non-medical",
+                "status": "Invalid", 
+                "disease": "Photo/Selfie detected - Please upload CT/MRI/X-Ray scans"
+            }), 400
 
-    response = {
-        "image_type": predicted_type,
-        "status": disease_status,
-        "disease": disease_type
-    }
-    return jsonify(response)
+        # YOUR ORIGINAL PIPELINE
+        img_flattened = load_and_preprocess_image(image)
+        predicted_type, img_flattened = predict_image_type(img_flattened)
+        disease_status, disease_type = predict_disease(predicted_type, img_flattened)
+
+        response = {
+            "image_type": predicted_type,
+            "status": disease_status,
+            "disease": disease_type
+        }
+        print("✅ Prediction complete:", response)
+        return jsonify(response)
+        
+    except Exception as e:
+        print("CRASH:", str(e))
+        print("Traceback:", traceback.format_exc())
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=False)

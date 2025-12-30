@@ -33,19 +33,28 @@ function App() {
       const res = await fetch(`${API_URL}/predict`, {
         method: "POST",
         body: formData,
+        // 🔥 FIXED: Essential headers for Render.com + file upload
+        cache: "no-store",
       });
 
+      // 🔥 FIXED: Robust error handling
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
+        const errorText = await res.text();
+        console.error("Server response:", errorText);
         
-        // ✅ HANDLE MEDICAL IMAGE VALIDATION ERROR
-        if (errorData.error === "Not a medical image") {
-          setPrediction(`⚠️ ${errorData.message}\n\nPlease upload proper CT/MRI/X-Ray scans for accurate analysis.`);
-          setCompleted(false);
-        } else {
-          setPrediction("Server error. Please try again.");
-          setCompleted(false);
+        let errorData = {};
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          console.error("JSON parse failed:", errorText);
         }
+        
+        if (errorData.image_type === "Non-medical" || errorData.error === "Not a medical image") {
+          setPrediction(`⚠️ ${errorData.disease || errorData.message || "Not a medical image"}\n\nPlease upload proper CT/MRI/X-Ray scans for accurate analysis.`);
+        } else {
+          setPrediction(`Server error: ${errorData.error || errorData.disease || 'Unknown error. Check console.'}`);
+        }
+        setCompleted(false);
         setLoading(false);
         return;
       }
@@ -55,7 +64,7 @@ function App() {
       setCompleted(true);
     } catch (err) {
       console.error("Prediction Error:", err);
-      setPrediction("Server error. Please try again.");
+      setPrediction("Network error. Please check your connection and try again.");
       setCompleted(false);
     } finally {
       setLoading(false);
@@ -65,10 +74,10 @@ function App() {
   const formatPrediction = (data) => {
     let result = `IMAGE ANALYSIS REPORT\n\n`;
     result += `Image Type: ${data.image_type}\n`;
-    result += `Type Confidence: ${data.image_type_confidence}%\n\n`;
+    result += `Type Confidence: ${data.image_type_confidence || 'N/A'}%\n\n`;
     result += `Status: ${data.status}\n`;
     result += `Disease Diagnosed: ${data.disease}\n`;
-    result += `Prediction Confidence: ${data.disease_confidence}%\n\n`;
+    result += `Prediction Confidence: ${data.disease_confidence || 'N/A'}%\n\n`;
     
     if (data.model_accuracy) {
       result += `Model Validation Accuracy: ${data.model_accuracy}%`;
