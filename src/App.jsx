@@ -33,11 +33,9 @@ function App() {
       const res = await fetch(`${API_URL}/predict`, {
         method: "POST",
         body: formData,
-        // 🔥 FIXED: Essential headers for Render.com + file upload
         cache: "no-store",
       });
 
-      // 🔥 FIXED: Robust error handling
       if (!res.ok) {
         const errorText = await res.text();
         console.error("Server response:", errorText);
@@ -49,10 +47,10 @@ function App() {
           console.error("JSON parse failed:", errorText);
         }
         
-        if (errorData.image_type === "Non-medical" || errorData.error === "Not a medical image") {
-          setPrediction(`⚠️ ${errorData.disease || errorData.message || "Not a medical image"}\n\nPlease upload proper CT/MRI/X-Ray scans for accurate analysis.`);
+        if (errorData.image_type === "Non-medical" || errorData.error) {
+          setPrediction(`⚠️ ${errorData.disease || errorData.error || "Not a medical image"}\n\nPlease upload proper CT/MRI/X-Ray scans.`);
         } else {
-          setPrediction(`Server error: ${errorData.error || errorData.disease || 'Unknown error. Check console.'}`);
+          setPrediction(`Server error: ${errorData.error || 'Unknown error'}`);
         }
         setCompleted(false);
         setLoading(false);
@@ -64,23 +62,37 @@ function App() {
       setCompleted(true);
     } catch (err) {
       console.error("Prediction Error:", err);
-      setPrediction("Network error. Please check your connection and try again.");
+      setPrediction("Network error. Please check your connection.");
       setCompleted(false);
     } finally {
       setLoading(false);
     }
   };
 
+  // 🔥 FIXED: Graceful handling of missing confidence fields
   const formatPrediction = (data) => {
     let result = `IMAGE ANALYSIS REPORT\n\n`;
-    result += `Image Type: ${data.image_type}\n`;
-    result += `Type Confidence: ${data.image_type_confidence || 'N/A'}%\n\n`;
-    result += `Status: ${data.status}\n`;
-    result += `Disease Diagnosed: ${data.disease}\n`;
-    result += `Prediction Confidence: ${data.disease_confidence || 'N/A'}%\n\n`;
+    result += `Image Type: ${data.image_type || 'Unknown'}\n`;
+    
+    // Only show confidence if backend provides it
+    if (data.image_type_confidence !== undefined) {
+      result += `Type Confidence: ${data.image_type_confidence.toFixed(1)}%\n\n`;
+    } else {
+      result += `\n`;
+    }
+    
+    result += `Status: ${data.status || 'Unknown'}\n`;
+    result += `Disease: ${data.disease || 'Not detected'}\n`;
+    
+    // Only show disease confidence if backend provides it
+    if (data.disease_confidence !== undefined) {
+      result += `Disease Confidence: ${data.disease_confidence.toFixed(1)}%\n\n`;
+    } else {
+      result += `\n`;
+    }
     
     if (data.model_accuracy) {
-      result += `Model Validation Accuracy: ${data.model_accuracy}%`;
+      result += `Model Accuracy: ${data.model_accuracy}%`;
     }
     
     return result;
@@ -95,7 +107,7 @@ function App() {
 
       <div className="upload-section">
         <label className="file-label">
-          <span>Upload Medical Image</span>
+          <span>Upload Medical Image (CT/MRI/X-Ray)</span>
           <input
             type="file"
             accept="image/*"
@@ -133,10 +145,10 @@ function App() {
             </div>
 
             <div className="report-card prediction-card">
-              <h3>AI Prediction</h3>
+              <h3>AI Analysis</h3>
               <div className="prediction-container">
                 <pre className="prediction-text">
-                  {prediction || "No prediction yet..."}
+                  {prediction || "Upload image and click 'Run Analysis'..."}
                 </pre>
               </div>
             </div>
@@ -164,7 +176,7 @@ function App() {
         )}
       </button>
 
-      {loading && <div className="loading-overlay">Processing your medical image...</div>}
+      {loading && <div className="loading-overlay">🔬 Processing your medical image...</div>}
     </div>
   );
 }

@@ -10,12 +10,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def path(filename): return os.path.join(BASE_DIR, filename)
 
 app = Flask(__name__)
-# 🔥 FIXED: Proper CORS for Render.com
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# ✅ FIXED VALIDATION (skin 0.25 threshold)
 def is_likely_medical_image(image):
-    """Your OG validation + stricter skin detection"""
+    """Medical image validation"""
     if image is None:
         return False
     
@@ -23,22 +21,18 @@ def is_likely_medical_image(image):
     mean_intensity = np.mean(gray)
     contrast = np.std(gray)
     
-    # Your OG thresholds (unchanged)
     if contrast < 35 or mean_intensity < 50 or mean_intensity > 210:
         return False
     
-    # FIXED: Proper OpenCV skin mask
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     skin_mask = cv2.inRange(hsv, np.array([0, 30, 60]), np.array([20, 255, 255]))
     skin_ratio = np.sum(skin_mask > 0) / (image.shape[0] * image.shape[1])
     
-    # 25% catches your selfie
     if skin_ratio > 0.25:
         return False
     
     return True
 
-# YOUR EXACT WORKING FUNCTIONS
 def softmax(z):
     exp_z = np.exp(z - np.max(z))
     return exp_z / np.sum(exp_z)
@@ -50,25 +44,32 @@ def load_and_preprocess_image(image, image_size=(64, 64)):
     return img_flattened
 
 def feature_scaling(image_data, mean, std):
-    return (image_data - mean) / (std + 1e-8)
+    return (image_data - mean) / (np.maximum(std, 1e-8))
 
+# 🔥 FIXED: Returns confidence score
 def predict_image_type(img_flattened):
-    W = np.loadtxt(path("softmax_weights.csv"), delimiter=",")
-    b = np.loadtxt(path("softmax_bias.csv"), delimiter=",")
-    X_mean = np.loadtxt(path("train_mean.csv"), delimiter=",")
-    X_std = np.loadtxt(path("train_std.csv"), delimiter=",")
-    label_mapping_df = pd.read_csv(path("label_mapping.csv"))
-    label_mapping = dict(zip(label_mapping_df["Index"], label_mapping_df["Label"]))
+    try:
+        W = np.loadtxt(path("softmax_weights.csv"), delimiter=",")
+        b = np.loadtxt(path("softmax_bias.csv"), delimiter=",")
+        X_mean = np.loadtxt(path("train_mean.csv"), delimiter=",")
+        X_std = np.loadtxt(path("train_std.csv"), delimiter=",")
+        label_mapping_df = pd.read_csv(path("label_mapping.csv"))
+        label_mapping = dict(zip(label_mapping_df["Index"], label_mapping_df["Label"]))
 
-    img_processed = feature_scaling(img_flattened, X_mean, X_std)
-    z = np.dot(img_processed, W) + b
-    y_pred = softmax(z)
-    predicted_class = int(np.argmax(y_pred))
-    predicted_type = label_mapping.get(predicted_class, "Unknown")
+        img_processed = feature_scaling(img_flattened, X_mean, X_std)
+        z = np.dot(img_processed, W) + b
+        y_pred = softmax(z)
+        predicted_class = int(np.argmax(y_pred))
+        confidence = float(np.max(y_pred) * 100)
+        predicted_type = label_mapping.get(predicted_class, "Unknown")
 
-    return predicted_type, img_flattened
+        print(f"Image type pred: {predicted_type}, conf: {confidence:.1f}%")
+        return predicted_type, img_flattened, confidence
+    except Exception as e:
+        print(f"Image type prediction failed: {e}")
+        return "Unknown", img_flattened, 0.0
 
-# 🔥 FIXED: ChestCT None handling (THIS PREVENTS 400 CRASH)
+# 🔥 FIXED: Returns confidence score + better ChestCT handling
 def predict_disease(image_type, img_flattened):
     model_configs = {
         "AbdomenCT": {"weights": "abdomen_softmax_weights.csv", "bias": "abdomen_softmax_bias.csv", "mean": "abdomen_train_mean.csv", "std": "abdomen_train_std.csv", "labels": {0: "Cyst", 1: "Normal", 2: "Stone", 3: "Tumor"}},
@@ -79,98 +80,91 @@ def predict_disease(image_type, img_flattened):
     }
 
     if image_type not in model_configs:
-        return "Unknown", "Unknown"
+        return "Unknown", "Unknown", 0.0
 
-    config = model_configs[image_type]
-    W = np.loadtxt(path(config["weights"]), delimiter=",")
-    b = np.loadtxt(path(config["bias"]), delimiter=",").reshape(1, -1)
-    label_mapping = config["labels"]
+    try:
+        config = model_configs[image_type]
+        W = np.loadtxt(path(config["weights"]), delimiter=",")
+        b = np.loadtxt(path(config["bias"]), delimiter=",").reshape(1, -1)
+        label_mapping = config["labels"]
 
-    if image_type == "ChestCT":
-        img_processed = (img_flattened - np.mean(img_flattened)) / (np.std(img_flattened) + 1e-8)
-    else:
-        # 🔥 CRASH FIX: Check if mean/std files exist
-        if config["mean"] is not None and config["std"] is not None:
-            try:
+        if image_type == "ChestCT":
+            img_mean = np.mean(img_flattened)
+            img_std = np.std(img_flattened)
+            img_processed = (img_flattened - img_mean) / (np.maximum(img_std, 1e-8))
+        else:
+            if config["mean"] is not None and config["std"] is not None:
                 X_mean = np.loadtxt(path(config["mean"]), delimiter=",")
                 X_std = np.loadtxt(path(config["std"]), delimiter=",")
                 img_processed = feature_scaling(img_flattened, X_mean, X_std)
-            except:
-                img_processed = img_flattened  # Safe fallback
-        else:
-            img_processed = img_flattened  # Safe fallback
+            else:
+                img_mean = np.mean(img_flattened)
+                img_std = np.std(img_flattened)
+                img_processed = (img_flattened - img_mean) / (np.maximum(img_std, 1e-8))
 
-    z = np.dot(img_processed.reshape(1, -1), W) + b
-    y_pred = softmax(z)
-    predicted_class = int(np.argmax(y_pred))
-    predicted_label = label_mapping.get(predicted_class, "Unknown")
+        z = np.dot(img_processed.reshape(1, -1), W) + b
+        y_pred = softmax(z)
+        predicted_class = int(np.argmax(y_pred))
+        confidence = float(np.max(y_pred) * 100)
+        predicted_label = label_mapping.get(predicted_class, "Unknown")
 
-    disease_status = "Diseased" if predicted_label != "Normal" else "Healthy"
-    disease_type = predicted_label if disease_status == "Diseased" else "Normal"
+        disease_status = "Diseased" if predicted_label != "Normal" else "Healthy"
+        disease_type = predicted_label if disease_status == "Diseased" else "Normal"
 
-    return disease_status, disease_type
+        print(f"Disease pred: {disease_type}, conf: {confidence:.1f}%")
+        return disease_status, disease_type, confidence
+    except Exception as e:
+        print(f"Disease prediction failed: {e}")
+        return "Unknown", "Unknown", 0.0
 
 @app.route("/", methods=["GET"])
 def health():
-    return jsonify({"status": "Server is running"})
+    return jsonify({"status": "Server running ✅"})
 
 @app.route("/predict", methods=["POST"])
 def upload():
     try:
-        print("PREDICT ENDPOINT HIT")
-        print(f"Content-Type: {request.content_type}")
-        print(f"Files keys: {list(request.files.keys())}")
+        print("🔥 PREDICT CALLED")
         
-        # 🔥 FIXED: Bulletproof file handling for Render.com
         if 'file' not in request.files:
-            print("'file' key missing in request.files")
             return jsonify({"error": "No file uploaded"}), 400
             
         file = request.files["file"]
         if file.filename == '':
-            print("Empty filename")
             return jsonify({"error": "No file selected"}), 400
         
-        print(f"Processing file: {file.filename}")
-        
-        # 🔥 FIXED: Proper file reading (seek back to start)
         file.seek(0)
         file_bytes = file.read()
-        print(f"File size: {len(file_bytes)} bytes")
-        
         image = cv2.imdecode(np.frombuffer(file_bytes, np.uint8), cv2.IMREAD_COLOR)
 
         if image is None:
-            print("cv2.imdecode failed")
-            return jsonify({"error": "Invalid image format"}), 400
+            return jsonify({"error": "Invalid image"}), 400
 
-        print(f"Image decoded: {image.shape}")
-
-        # 🔥 SELFIE PROTECTION
         if not is_likely_medical_image(image):
-            print("Non-medical image detected")
             return jsonify({
                 "image_type": "Non-medical",
                 "status": "Invalid", 
-                "disease": "Photo/Selfie detected - Please upload CT/MRI/X-Ray scans"
+                "disease": "Photo/Selfie detected - Please upload CT/MRI/X-Ray"
             }), 400
 
-        # YOUR ORIGINAL PIPELINE
         img_flattened = load_and_preprocess_image(image)
-        predicted_type, img_flattened = predict_image_type(img_flattened)
-        disease_status, disease_type = predict_disease(predicted_type, img_flattened)
+        image_type, img_flattened, type_conf = predict_image_type(img_flattened)
+        status, disease, disease_conf = predict_disease(image_type, img_flattened)
 
         response = {
-            "image_type": predicted_type,
-            "status": disease_status,
-            "disease": disease_type
+            "image_type": image_type,
+            "image_type_confidence": type_conf,
+            "status": status,
+            "disease": disease,
+            "disease_confidence": disease_conf
         }
-        print("✅ Prediction complete:", response)
+        
+        print("SUCCESS:", response)
         return jsonify(response)
         
     except Exception as e:
-        print("CRASH:", str(e))
-        print("Traceback:", traceback.format_exc())
+        print("ERROR:", str(e))
+        print(traceback.format_exc())
         return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 if __name__ == "__main__":
