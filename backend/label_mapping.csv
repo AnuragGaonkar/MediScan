@@ -1,7 +1,6 @@
-Label,Index
-AbdomenCT,0
-BreastMRI,1
-CXR,2
-ChestCT,3
-Hand,4
-HeadCT,5
+Index,Label
+0,AbdomenCT
+1,BreastMRI
+2,CXR
+3,ChestCT
+4,HeadCT
