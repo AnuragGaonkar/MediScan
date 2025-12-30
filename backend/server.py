@@ -22,26 +22,59 @@ MODEL_ACCURACIES = {
     "BreastMRI": 93.2
 }
 
-# ✅ MEDICAL IMAGE VALIDATION
+# 🚀 BULLETPROOF MEDICAL IMAGE VALIDATION (MUCH STRONGER)
 def is_likely_medical_image(image):
-    """Validate if image looks like medical scan (not photo/selfie)"""
-    if image is None:
+    """Advanced multi-stage validation to reject photos/selfies"""
+    if image is None or image.size == 0:
         return False
     
+    h, w = image.shape[:2]
+    
+    # STAGE 1: Basic image properties check
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     mean_intensity = np.mean(gray)
     contrast = np.std(gray)
     
-    # Medical scans: high contrast (40-120), mid brightness (60-200)
-    if contrast < 35 or mean_intensity < 50 or mean_intensity > 210:
+    # Medical scans: high contrast (45-140), specific brightness (70-200)
+    if contrast < 45 or mean_intensity < 70 or mean_intensity > 200:
         return False
     
-    # Check for skin-like colors (common in selfies)
+    # STAGE 2: Skin detection using MULTIPLE color spaces (HSV + YCrCb)
+    # HSV Skin detection (stricter ranges)
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    skin_pixels = np.sum((hsv[:,:,0] > 0) & (hsv[:,:,0] < 20) & (hsv[:,:,1] > 30))
-    total_pixels = image.shape[0] * image.shape[1]
+    skin_hsv_mask = cv2.inRange(hsv, np.array([0, 30, 60]), np.array([20, 255, 255]))
     
-    if skin_pixels / total_pixels > 0.3:  # >30% skin pixels = likely photo
+    # YCrCb Skin detection (more robust)
+    ycrcb = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
+    skin_ycrcb_mask = cv2.inRange(ycrcb, np.array([80, 135, 85]), np.array([255, 180, 135]))
+    
+    # Combine both skin detectors
+    skin_mask = cv2.bitwise_and(skin_hsv_mask, skin_ycrcb_mask)
+    skin_ratio = np.sum(skin_mask > 0) / (h * w)
+    
+    # If >15% skin pixels → definitely a photo (much stricter than 30%)
+    if skin_ratio > 0.15:
+        return False
+    
+    # STAGE 3: Face detection ( selfies usually have faces )
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+    if len(faces) > 0:
+        return False
+    
+    # STAGE 4: Color entropy check (medical images have less color variation)
+    hsv_entropy = -np.sum(np.histogram(hsv[:,:,0], bins=180, density=True)[0] * 
+                         np.log(np.histogram(hsv[:,:,0], bins=180, density=True)[0] + 1e-10))
+    
+    if hsv_entropy > 4.5:  # Photos have higher color entropy
+        return False
+    
+    # STAGE 5: Edge density check (medical images have structured patterns)
+    edges = cv2.Canny(gray, 50, 150)
+    edge_ratio = np.sum(edges > 0) / (h * w)
+    
+    if edge_ratio < 0.08:  # Medical images have more structured edges
         return False
     
     return True
@@ -158,17 +191,25 @@ def health():
 
 @app.route("/predict", methods=["POST"])
 def upload():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
     file = request.files["file"]
-    image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    # Read image
+    npimg = np.frombuffer(file.read(), np.uint8)
+    image = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
 
     if image is None:
-        return jsonify({"error": "Invalid image"}), 400
+        return jsonify({"error": "Invalid image format"}), 400
 
-    # ✅ CRITICAL: MEDICAL IMAGE VALIDATION
+    # 🚀 BULLETPROOF VALIDATION
     if not is_likely_medical_image(image):
         return jsonify({
             "error": "Not a medical image",
-            "message": "Please upload CT/MRI/X-Ray scans only. This appears to be a photo/selfie.",
+            "message": "❌ Please upload CT/MRI/X-Ray scans only. Detected: selfie/photo.",
             "image_type": "Non-medical",
             "image_type_confidence": 0.0,
             "status": "Invalid",
@@ -177,6 +218,7 @@ def upload():
             "model_accuracy": None
         }), 400
 
+    # Process valid medical image
     img_flattened = load_and_preprocess_image(image)
     predicted_type, img_flattened, type_confidence = predict_image_type(img_flattened)
     disease_status, disease_type, disease_confidence = predict_disease(predicted_type, img_flattened)
@@ -193,4 +235,4 @@ def upload():
     return jsonify(response)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)
