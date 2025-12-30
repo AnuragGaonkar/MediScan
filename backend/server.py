@@ -93,6 +93,61 @@ def load_and_preprocess_image(image, image_size=(64, 64)):
 def feature_scaling(x, mean, std):
     return (x - mean) / (np.maximum(std, 1e-8))
 
+# ================================
+# ADD THIS ABOVE predict_image_type
+# ================================
+
+def anatomical_region_hint(image):
+    """
+    Coarse anatomical gating.
+    Narrows down possible modalities.
+    """
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    h, w = gray.shape
+    mean = np.mean(gray)
+    std = np.std(gray)
+
+    # -------------------------------
+    # HEAD CT → Skull ring detection
+    # -------------------------------
+    _, bone = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+    bone_ratio = np.sum(bone == 255) / (h * w)
+
+    if bone_ratio > 0.18:
+        return "HeadCT"
+
+    # -------------------------------
+    # CXR → Large lung air regions
+    # -------------------------------
+    dark_ratio = np.sum(gray < 60) / gray.size
+    if dark_ratio > 0.40 and std < 70:
+        return "CXR"
+
+    # -------------------------------
+    # CHEST CT → lungs + mediastinum
+    # -------------------------------
+    if dark_ratio > 0.30 and std > 60:
+        return "ChestCT"
+
+    # -------------------------------
+    # ABDOMEN CT → spine + organs
+    # -------------------------------
+    center = gray[h//3:2*h//3, w//3:2*w//3]
+    center_std = np.std(center)
+
+    if 25 < center_std < 60:
+        return "AbdomenCT"
+
+    # -------------------------------
+    # BREAST MRI → smooth textures
+    # -------------------------------
+    if std < 40 and mean > 90:
+        return "BreastMRI"
+
+    return "Unknown"
+
+
 # ============================================================
 # IMAGE TYPE CLASSIFICATION (UNCHANGED)
 # ============================================================
