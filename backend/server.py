@@ -258,7 +258,7 @@ def predict_disease(image_type, img_flattened):
 
 @app.route("/", methods=["GET"])
 def health():
-    return jsonify({"status": "Server running ✅"})
+    return jsonify({"status": "Server running "})
 
 @app.route("/predict", methods=["POST"])
 def upload():
