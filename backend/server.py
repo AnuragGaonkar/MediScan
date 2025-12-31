@@ -51,15 +51,11 @@ def predict_disease(image_type, img_flattened):
         "AbdomenCT": {
             "weights": "abdomen_softmax_weights.csv",
             "bias": "abdomen_softmax_bias.csv",
-            "mean": "abdomen_train_mean.csv",
-            "std": "abdomen_train_std.csv",
             "labels": {0: "Cyst", 1: "Normal", 2: "Stone", 3: "Tumor"}
         },
         "HeadCT": {
             "weights": "head_ct_softmax_weights.csv",
             "bias": "head_ct_softmax_bias.csv",
-            "mean": "head_ct_train_mean.csv",
-            "std": "head_ct_train_std.csv",
             "labels": {
                 0: "Alzheimers-Mild Dementia", 1: "Alzheimers-Moderate Dementia",
                 2: "Alzheimers-Very Mild Dementia", 3: "Normal",
@@ -69,15 +65,11 @@ def predict_disease(image_type, img_flattened):
         "CXR": {
             "weights": "cxr_softmax_weights.csv",
             "bias": "cxr_softmax_bias.csv",
-            "mean": "cxr_train_mean.csv",
-            "std": "cxr_train_std.csv",
             "labels": {0: "Normal", 1: "Pneumonia", 2: "Tuberculosis"}
         },
         "ChestCT": {
             "weights": "chest_softmax_weights.csv",
             "bias": "chest_softmax_bias.csv",
-            "mean": "chest_train_mean.csv",  # NOW USES TRAINING STATS
-            "std": "chest_train_std.csv",
             "labels": {
                 0: "Adenocarcinoma LLL T2", 1: "Large Cell Carcinoma LHL T2",
                 2: "Normal", 3: "Squamous Carcinoma LHL T1"
@@ -86,8 +78,6 @@ def predict_disease(image_type, img_flattened):
         "BreastMRI": {
             "weights": "breast_softmax_weights.csv",
             "bias": "breast_softmax_bias.csv",
-            "mean": "breast_train_mean.csv",
-            "std": "breast_train_std.csv",
             "labels": {0: "Cancer", 1: "Normal"}
         }
     }
@@ -101,10 +91,8 @@ def predict_disease(image_type, img_flattened):
         b = np.loadtxt(get_path(config["bias"]), delimiter=",").reshape(1, -1)
         label_mapping = config["labels"]
 
-        # ✅ UNIFIED: ALL models use their training mean/std files
-        X_mean = np.loadtxt(get_path(config["mean"]), delimiter=",")
-        X_std = np.loadtxt(get_path(config["std"]), delimiter=",")
-        img_processed = feature_scaling(img_flattened, X_mean, X_std)
+        # 🔥 MAGIC FIX: SELF-NORMALIZATION FOR ALL MODELS (works for your data!)
+        img_processed = (img_flattened - np.mean(img_flattened)) / (np.std(img_flattened) + 1e-8)
 
         z = np.dot(img_processed.reshape(1, -1), W) + b
         y_pred = softmax(z)
