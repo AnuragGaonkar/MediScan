@@ -114,8 +114,8 @@ def predict_disease(image_type, img_flattened):
         "ChestCT": {
             "weights": "chest_softmax_weights.csv",
             "bias": "chest_softmax_bias.csv",
-            "mean": None,
-            "std": None,
+            "mean": "chest_train_mean.csv",
+            "std": "chest_train_std.csv",
             "labels": {
                 0: "Adenocarcinoma LLL T2", 1: "Large Cell Carcinoma LHL T2",
                 2: "Normal", 3: "Squamous Carcinoma LHL T1"
