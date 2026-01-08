@@ -96,13 +96,13 @@ npm start
 
 ### System Architecture Flow
 
-<img src="public/photo/Mediquick.png" alt="MediScan Architecture Flow" width="100%"/>
+<img src="public/photo/Mediscan.png" alt="MediScan Architecture Flow" width="100%"/>
 
 ### Diagnostic Walkthrough
 *Demonstration of the end-to-end medical diagnostic flow: Image upload, automated preprocessing, and 21-class diagnostic inference.*
 
 > [!IMPORTANT]
-> **[Watch High-Resolution MediScan Demo](public/video/mediscan_demo.mp4)**
+> **[Watch High-Resolution MediScan Demo](public/video/mediscan.mp4)**
 
 ---
 
